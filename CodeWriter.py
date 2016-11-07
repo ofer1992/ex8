@@ -14,7 +14,7 @@ class CodeWriter:
         :param output: The output file/stream
         """
         self.output = output
-        self.output.write("@256\nD=A\n@SP\nM=D\n")
+        #self.output.write("@256\nD=A\n@SP\nM=D\n")
 
     def set_filename(self, file_name):
         """
@@ -29,7 +29,7 @@ class CodeWriter:
         :param command: A VM command
         """
         commands = {'add': '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=D+M\nM=D\n'
-                    ,'sub': '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=D-M\nM=D\n'
+                    ,'sub': '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=M-D\nM=D\n'
                     ,'neg': '@SP\nA=M\nM=-M\n'
                     ,'eq':  '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=D-M\n@EQ\nD;JEQ\n@SP\nA=M-1\nM=0\n@NEQ\n0;JMP\n(EQ)\n@SP\nA=M-1\nM=-1\n(NEQ)\n'
                     ,'gt':  '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=M-D\n@GT\nD;JGT\n@SP\nA=M-1\nM=0\n@NGT\n0;JMP\n(GT)\n@SP\nA=M-1\nM=-1\n(NGT)\n'
@@ -48,22 +48,25 @@ class CodeWriter:
         :param segment: String
         :param index: int
         """
-        segments = {'constant': '',
-                    'argument': '@ARG\nA=M+D\nD=M\n',
+        push_segments = {'constant': '',
+                    'argument': '@ARG\nA=M+D\n',
                     'local': '@LCL\nA=M+D\n',
                     'this': '@THIS\nA=M+D\n',
                     'that': '@THAT\nA=M+D\n',
-                    'pointer': '@3\nA=A+D\n',
-                    'temp': '@5\nA=A+D\n'}
-        shortcuts = {'argument': 'ARGS', 'local': 'LCL', 'this': 'THIS\nA=M', 'that': 'THAT\nA=M', 'pointer': '3',
-                     'temp': '5'}y  
+                    'pointer': '@R3\nA=A+D\n',
+                    'temp': '@R5\nA=A+D\n'}
+        pop_segments = {'argument': '@ARG\nD=D+M\n',
+                        'local': '@LCL\nD=D+M\n',
+                        'this': '@THIS\n\nD=D+M\n',
+                        'that': '@THAT\n\nD=D+M\n',
+                        'pointer': '@R3\nD=D+A\n',
+                        'temp': '@R5\nD=D+A\n'}
 
-        set_value = 'D=M\n' if segment is not 'constant' else 'D=A\n'
-        set_index = "@{0}\nD=A\n"
+        set_value = 'D=M\n' if segment is not 'constant' else ''
+        set_index = "@{0}\nD=A\n".format(index)
 
         if command is Commands.C_PUSH:
-            self.output.write(set_index.format(index)+segments[segment]+set_value+"@SP\nA=M\nM=D\n@SP\nM=M+1\n")
+            self.output.write(set_index+push_segments[segment]+set_value+"@SP\nA=M\nM=D\n@SP\nM=M+1\n")
 
         elif command is Commands.C_POP:
-            self.output.write('@{0}\nD=A\n@'.format(index)+shortcuts[segment]
-                +'\nD=D+A\n@address\nM=D\n@SP\nM=M-1\nA=M\nD=M\n@address\nA=M\nM=D\n')
+            self.output.write(set_index+pop_segments[segment]+"@address\nM=D\n@SP\nM=M-1\nA=M\nD=M\n@address\nA=M\nM=D\n")
