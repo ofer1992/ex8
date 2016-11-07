@@ -6,7 +6,7 @@ class Commands(Enum):
 
 class CodeWriter:
     """Translates VM commands into Hack assembly code."""
-    filename = ""
+    file_name = "Default"
 
     def __init__(self, output):
         """
@@ -54,13 +54,15 @@ class CodeWriter:
                     'this': '@THIS\nA=M+D\n',
                     'that': '@THAT\nA=M+D\n',
                     'pointer': '@R3\nA=A+D\n',
-                    'temp': '@R5\nA=A+D\n'}
+                    'temp': '@R5\nA=A+D\n',
+                    'static': '@'+self.file_name+".{0}\nD=M\n".format(index)}
         pop_segments = {'argument': '@ARG\nD=D+M\n',
                         'local': '@LCL\nD=D+M\n',
                         'this': '@THIS\n\nD=D+M\n',
                         'that': '@THAT\n\nD=D+M\n',
                         'pointer': '@R3\nD=D+A\n',
-                        'temp': '@R5\nD=D+A\n'}
+                        'temp': '@R5\nD=D+A\n',
+                        'static': '@'+self.file_name+".{0}\nD=A\n".format(index)}
 
         set_value = 'D=M\n' if segment is not 'constant' else ''
         set_index = "@{0}\nD=A\n".format(index)
@@ -69,4 +71,4 @@ class CodeWriter:
             self.output.write(set_index+push_segments[segment]+set_value+"@SP\nA=M\nM=D\n@SP\nM=M+1\n")
 
         elif command is Commands.C_POP:
-            self.output.write(set_index+pop_segments[segment]+"@address\nM=D\n@SP\nM=M-1\nA=M\nD=M\n@address\nA=M\nM=D\n")
+            self.output.write(set_index+pop_segments[segment]+"@R13\nM=D\n@SP\nM=M-1\nA=M\nD=M\n@R13\nA=M\nM=D\n")
