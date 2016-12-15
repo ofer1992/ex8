@@ -1,12 +1,7 @@
-from enum import Enum
-
-class Commands(Enum):
-    C_PUSH = 1
-    C_POP = 2
+from Commands import Commands as C
 
 class CodeWriter:
     """Translates VM commands into Hack assembly code."""
-    file_name = "Default"
 
     def __init__(self, output):
         """
@@ -14,11 +9,12 @@ class CodeWriter:
         :param output: The output file/stream
         """
         self.output = output
-        #self.output.write("@256\nD=A\n@SP\nM=D\n")
+        self.output.write("@256\nD=A\n@SP\nM=D\n")
+        self.file_name = ""
 
     def set_filename(self, file_name):
         """
-        Infroms the code writer that the translation of a new VM file is started.
+        Informs the code writer that the translation of a new VM file is started.
         :param file_name:
         """
         self.file_name = file_name
@@ -29,7 +25,7 @@ class CodeWriter:
         :param command: A VM command
         """
         commands = {'add': '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=D+M\nM=D\n'
-                    ,'sub': '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=M-D\nM=D\n'
+                    ,'sub': '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=D-M\nM=D\n'
                     ,'neg': '@SP\nA=M\nM=-M\n'
                     ,'eq':  '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=D-M\n@EQ\nD;JEQ\n@SP\nA=M-1\nM=0\n@NEQ\n0;JMP\n(EQ)\n@SP\nA=M-1\nM=-1\n(NEQ)\n'
                     ,'gt':  '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=M-D\n@GT\nD;JGT\n@SP\nA=M-1\nM=0\n@NGT\n0;JMP\n(GT)\n@SP\nA=M-1\nM=-1\n(NGT)\n'
@@ -39,36 +35,35 @@ class CodeWriter:
                     ,'not': '@SP\nA=M\nM=!M\n'}
         self.output.write(commands[command])
 
-
     def write_push_pop(self, command, segment, index):
         """
         Writes the assembly code that is the translation of the given command, where command is either C_PUSH or
         C_POP.
-        :param command: C_PUSH or C_POP (Enum?)
+        :param command: C_PUSH or C_POP
         :param segment: String
         :param index: int
         """
-        push_segments = {'constant': '',
-                    'argument': '@ARG\nA=M+D\n',
+        segments = {'constant': '',
+                    'argument': '@ARG\nA=M+D\nD=M\n',
                     'local': '@LCL\nA=M+D\n',
                     'this': '@THIS\nA=M+D\n',
                     'that': '@THAT\nA=M+D\n',
-                    'pointer': '@R3\nA=A+D\n',
-                    'temp': '@R5\nA=A+D\n',
-                    'static': '@'+self.file_name+".{0}\nD=M\n".format(index)}
-        pop_segments = {'argument': '@ARG\nD=D+M\n',
-                        'local': '@LCL\nD=D+M\n',
-                        'this': '@THIS\n\nD=D+M\n',
-                        'that': '@THAT\n\nD=D+M\n',
-                        'pointer': '@R3\nD=D+A\n',
-                        'temp': '@R5\nD=D+A\n',
-                        'static': '@'+self.file_name+".{0}\nD=A\n".format(index)}
+                    'pointer': '@3\nA=A+D\n',
+                    'temp': '@5\nA=A+D\n'}
+        shortcuts = {'argument': 'ARGS', 'local': 'LCL', 'this': 'THIS\nA=M', 'that': 'THAT\nA=M', 'pointer': '3',
+                     'temp': '5'}
 
-        set_value = 'D=M\n' if segment is not 'constant' else ''
-        set_index = "@{0}\nD=A\n".format(index)
+        #TODO: Figure out why commented form isn't working, get rid of double D=A
+        # set_value = 'D=M\n' if segment is not 'constant' else 'D=A\n'
+        if segment is 'constant':
+            set_value = 'D=M\n'
+        else:
+            set_value = "D=A\n"
+        set_index = "@{0}\nD=A\n"
 
-        if command is Commands.C_PUSH:
-            self.output.write(set_index+push_segments[segment]+set_value+"@SP\nA=M\nM=D\n@SP\nM=M+1\n")
+        if command is C.C_PUSH:
+            self.output.write(set_index.format(index)+segments[segment]+set_value+"@SP\nA=M\nM=D\n@SP\nM=M+1\n")
 
-        elif command is Commands.C_POP:
-            self.output.write(set_index+pop_segments[segment]+"@R13\nM=D\n@SP\nM=M-1\nA=M\nD=M\n@R13\nA=M\nM=D\n")
+        elif command is C.C_POP:
+            self.output.write('@{0}\nD=A\n@'.format(index)+shortcuts[segment]
+                +'\nD=D+A\n@address\nM=D\n@SP\nM=M-1\nA=M\nD=M\n@address\nA=M\nM=D\n')
