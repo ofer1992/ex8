@@ -11,6 +11,11 @@ class CodeWriter:
         """
         self.output = output
         self.file_name = ""
+        self.commands = {}
+        command_names = ['add','sub','neg','eq','gt','lt','and','or','not']
+        for command in command_names:
+            with open(command, 'r') as myfile:
+                self.commands[command] = myfile.read()
 
     def set_filename(self, file_name):
         """
@@ -24,21 +29,7 @@ class CodeWriter:
         Writes the assembly code that is the translation of the given arithmetic command.
         :param command: A VM command
         """
-        commands = {'add': '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=M+D\nM=D\n'
-                    ,'sub': '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=M-D\nM=D\n'
-                    ,'neg': '@SP\nA=M-1\nM=-M\n'
-                    ,'eq':  '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=D-M\nA=D\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A'
-                            '\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\n'
-                            'A=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=1'
-                            '\nD=D&A\n@SP\nA=M-1\nM=-D\nM=!M\n'
-                    ,'gt':  '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=M-D\nD=D-1\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D'
-                            '>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nM=!D\n'
-                    ,'lt': '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=D-M\nD=D-1\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D'
-                           '>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nM=!D\n'
-                    , 'and': '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=D&M\nM=D\n'
-                    ,'or': '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=D|M\nM=D\n'
-                    ,'not': '@SP\nA=M-1\nM=!M\n'}
-        self.output.write(commands[command])
+        self.output.write(self.commands[command])
 
     def write_push_pop(self, command, segment, index):
         """

@@ -46,7 +46,11 @@ def main():
     current_path = sys.argv[1]
 
     if isfile(current_path):
+        if not current_path.endswith(INPUT_FILE_SUFFIX):
+            print("Not an asm file.")
+            return
         vm_files = [current_path]
+        current_path = current_path[:-3]+OUTPUT_FILE_SUFFIX
 
     else:
         if not current_path.endswith('/'):
