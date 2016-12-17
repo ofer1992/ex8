@@ -1,5 +1,6 @@
 from Commands import Commands as C
 
+
 class CodeWriter:
     """Translates VM commands into Hack assembly code."""
 
@@ -9,7 +10,6 @@ class CodeWriter:
         :param output: The output file/stream
         """
         self.output = output
-        # self.output.write("@256\nD=A\n@SP\nM=D\n")
         self.file_name = ""
 
     def set_filename(self, file_name):
@@ -24,12 +24,17 @@ class CodeWriter:
         Writes the assembly code that is the translation of the given arithmetic command.
         :param command: A VM command
         """
-        commands = {'add': '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=D+M\nM=D\n'
-                    ,'sub': '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=D-M\nM=D\n'
+        commands = {'add': '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=M+D\nM=D\n'
+                    ,'sub': '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=M-D\nM=D\n'
                     ,'neg': '@SP\nA=M-1\nM=-M\n'
-                    ,'eq':  '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=D-M\nA=D\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=1\nD=D&A\n@SP\nA=M-1\nM=-D\n'
-                    ,'gt':  '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=M-D\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nM=D\n\n'
-                    ,'lt': '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=D-M\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nM=D\n\n'
+                    ,'eq':  '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=D-M\nA=D\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A'
+                            '\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\n'
+                            'A=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=A>>\nD=D|A\nA=1'
+                            '\nD=D&A\n@SP\nA=M-1\nM=-D\nM=!M\n'
+                    ,'gt':  '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=M-D\nD=D-1\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D'
+                            '>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nM=!D\n'
+                    ,'lt': '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=D-M\nD=D-1\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D'
+                           '>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nD=D>>\nM=!D\n'
                     , 'and': '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=D&M\nM=D\n'
                     ,'or': '@SP\nA=M-1\nD=M\n@SP\nM=M-1\nA=M-1\nD=D|M\nM=D\n'
                     ,'not': '@SP\nA=M-1\nM=!M\n'}
@@ -42,25 +47,52 @@ class CodeWriter:
         :param command: C_PUSH or C_POP
         :param segment: String
         :param index: int
+        :return:
         """
-        segments = {'constant': '',
-                    'argument': '@ARG\nA=M+D\n',
-                    'local': '@LCL\nA=M+D\n',
-                    'this': '@THIS\nA=M+D\n',
-                    'that': '@THAT\nA=M+D\n',
-                    'pointer': '@3\nA=A+D\n',
-                    'temp': '@5\nA=A+D\n'}
-        shortcuts = {'argument': 'ARG', 'local': 'LCL', 'this': 'THIS\nA=M', 'that': 'THAT\nA=M', 'pointer': '3',
-                     'temp': '5'}
-
-        #TODO: Figure out why commented form isn't working, get rid of double D=A
-        # set_value = 'D=A\n' if segment is 'constant' else 'D=M\n'
-        set_value = '' if segment is 'constant' else 'D=M\n'
-        set_index = "@{0}\nD=A\n"
-
+        shortcuts = {'argument': 'ARG', 'local': 'LCL', 'this': 'THIS', 'that': 'THAT', 'pointer': '3',
+                     'temp': '5', 'constant': '', 'static': ''}
         if command is C.C_PUSH:
-            self.output.write(set_index.format(index)+segments[segment]+set_value+"@SP\nA=M\nM=D\n@SP\nM=M+1\n")
+            push_code = "@SP\nA=M\nM=D\n@SP\nM=M+1\n"
+
+            # Segment is this, that, arguments or local
+            case_a = "@{0}\nD=A\n@{1}\nA=D+M\nD=M\n".format(index,shortcuts[segment])
+            # Segment is pointer or temp
+            case_b = "@{0}\nD=A\n@{1}\nA=D+A\nD=M\n".format(index,shortcuts[segment])
+            # Segment is constant
+            case_c = "@{0}\nD=A\n".format(index)
+            # Segment is static
+            case_d = "@{0}.{1}\nD=M\n".format(self.file_name,index)
+
+            segments = {'argument': case_a,
+                        'local': case_a,
+                        'this': case_a,
+                        'that': case_a,
+                        'pointer': case_b,
+                        'temp': case_b,
+                        'constant': case_c,
+                        'static': case_d}
+
+            self.output.write(segments[segment]+push_code)
 
         elif command is C.C_POP:
-            self.output.write((set_index+'@').format(index)+shortcuts[segment]
-                + '\nD=D+A\n@R15\nM=D\n@SP\nM=M-1\nA=M\nD=M\n@R15\nA=M\nM=D\n')
+            pop_code = "@SP\nM=M-1\nA=M\nD=M\n@R15\nA=M\nM=D\n"
+
+            # Segment is this, that, arguments or local
+            case_a = "@{0}\nD=A\n@{1}\nD=D+M\n@R15\nM=D\n".format(index,shortcuts[segment])
+            # Segment is pointer or temp
+            case_b = "@{0}\nD=A\n@{1}\nD=D+A\n@R15\nM=D\n".format(index, shortcuts[segment])
+            # Segment is static
+            case_c = "@{0}.{1}\nD=A\n@R15\nM=D\n".format(self.file_name,index)
+
+            segments = {'argument': case_a,
+                        'local': case_a,
+                        'this': case_a,
+                        'that': case_a,
+                        'pointer': case_b,
+                        'temp': case_b,
+                        'static': case_c}
+
+            self.output.write(segments[segment]+pop_code)
+
+    def close(self):
+        self.output.close()

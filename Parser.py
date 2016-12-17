@@ -6,12 +6,10 @@ ARITHMETIC = {"add", "sub", "neg", "eq", "gt", "lt", "and", "or", "not"}
 
 class Parser(object):
     __COMMENT_REGEX = re.compile(r"//.*")
-    __SPACE_REGEX = re.compile(r"^\s+$")
+    __BLANK_LINE_REGEX = re.compile(r"^\s+$")
 
     def __init__(self, filename):
-        # self.location = -1
         self.f = open(filename)
-        # self.filename = filename
         self.current_command = ''
 
     def __peek(self):
@@ -24,19 +22,21 @@ class Parser(object):
         self.f.seek(loc)
         return line
 
-    # def resetLoc(self):
-    #     """
-    #     Returns parser to the beginning of the file.
-    #     :return:
-    #     """
-    #     self.f.seek(0)
 
-    def hasMoreCommands(self):
+    def hasMoreCommands(self): #TODO: Not good enough
         """
         Tests if there are lines left in script
         :return: true iff there are more lines
         """
-        return self.__peek() != ""
+        next_line = self.__peek()
+        if next_line == "": return False
+        next_line = re.sub(self.__COMMENT_REGEX, "", next_line)
+        next_line = re.sub(self.__BLANK_LINE_REGEX, "", next_line)
+        if next_line == "":
+            self.f.readline()
+            return self.hasMoreCommands()
+        else:
+            return True
 
     def advance(self):
         """
@@ -46,23 +46,12 @@ class Parser(object):
         :return:
         """
         self.current_command = self.f.readline()
-        self.current_command = re.sub(self.__COMMENT_REGEX, "", self.current_command)
-        self.current_command = re.sub(self.__SPACE_REGEX, "", self.current_command)
-        print(self.current_command)
-        if self.current_command == "": self.advance()
-    #
-    # def hasMoreCommands(self):
-    #     loc = self.f.tell()
-    #     if loc != self.location:
-    #         self.location = loc
-    #         return True
-    #     else:
-    #         return False
-    #
-    # def advance(self):
-    #     return self.f.readline().strip()
 
     def commandType(self):
+        """
+        Returns the current line's command type
+        :return:
+        """
         command = self.current_command.split()
         if command[0] in ARITHMETIC:
             return C.C_ARITHMETIC
@@ -74,14 +63,21 @@ class Parser(object):
             return -1
 
     def arg1(self):
+        """
+        Returns the first argument given. If called while parsing an arithmetic command, returns the name of the
+        arithmetic command.
+        :return:
+        """
         command = self.current_command.split()
-        # print(self.current_command)
-        # print(command)
         if command[0] in ARITHMETIC:
             return command[0]
         return command[1]
 
     def arg2(self):
+        """
+        Returns the second argument given. Should not be called if not parsing a POP/PUSH command.
+        :return:
+        """
         command = self.current_command.split()
         return command[2]
 
