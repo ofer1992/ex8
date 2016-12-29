@@ -23,7 +23,7 @@ class Parser(object):
         return line
 
 
-    def hasMoreCommands(self): #TODO: Not good enough
+    def hasMoreCommands(self):
         """
         Tests if there are lines left in script
         :return: true iff there are more lines

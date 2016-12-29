@@ -28,8 +28,6 @@ def process(parser, codewriter):
         elif command is C.C_ARITHMETIC:
             operator = parser.arg1()
             codewriter.write_arithmetic(operator)
-        else:
-            print("unexpected")
 
 
 def main():
