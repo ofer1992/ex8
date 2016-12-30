@@ -59,8 +59,20 @@ class Parser(object):
             return C.C_PUSH
         elif command[0] == "pop":
             return C.C_POP
+        elif command[0] == "label":
+            return C.C_LABEL
+        elif command[0] == "goto":
+            return C.C_GOTO
+        elif command[0] == "if-goto":
+            return C.C_IF
+        elif command[0] == "call":
+            return  C.C_CALL
+        elif command[0] == "function":
+            return C.C_FUNCTION
+        elif command[0] == "return":
+            return C.C_RETURN
         else:
-            return -1
+            "unknown"
 
     def arg1(self):
         """

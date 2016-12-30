@@ -28,6 +28,27 @@ def process(parser, codewriter):
         elif command is C.C_ARITHMETIC:
             operator = parser.arg1()
             codewriter.write_arithmetic(operator)
+        elif command is C.C_LABEL:
+            label = parser.arg1()
+            codewriter.write_label(label)
+        elif command is C.C_GOTO:
+            label = parser.arg1()
+            codewriter.write_goto(label)
+        elif command is C.C_IF:
+            label = parser.arg1()
+            codewriter.write_if(label)
+        elif command is C.C_CALL:
+            f = parser.arg1()
+            n = int(parser.arg2())
+            codewriter.write_call(f,n)
+        elif command is C.C_FUNCTION:
+            f = parser.arg1()
+            k = int(parser.arg2())
+            codewriter.write_function(f,k)
+        elif command is C.C_RETURN:
+            codewriter.write_return()
+        else:
+            print("WTF")
 
 
 def main():
